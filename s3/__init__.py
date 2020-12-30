@@ -2,7 +2,7 @@ from flask import Flask, render_template, url_for, flash, redirect, request
 from decouple import config
 from boto3.session import Session
 from tabulate import tabulate
-from .forms import CreateBucketForm
+from .forms import CreateBucketForm, DeleteBucketForm
 import botocore
 
 app = Flask(__name__)
@@ -34,18 +34,30 @@ def index():
                 new_bucket_name = request.form.get('new_bucket_name')
                 client = get_resource_client()
                 client.create_bucket(Bucket=new_bucket_name, CreateBucketConfiguration={'LocationConstraint': REGION})
-                flash(f'Bucket \'{new_bucket_name}\' created successfully!', 'success')
+                flash(f'Bucket {new_bucket_name} created successfully!', 'success')
             except client.meta.client.exceptions.BucketAlreadyExists as e:
                 flash('Bucket {} already exists!'.format(e.response['Error']['BucketName']), 'danger')
             except client.meta.client.exceptions.BucketAlreadyOwnedByYou as e:
                 flash('Bucket {} already owned by you!'.format(e.response['Error']['BucketName']), 'danger')
             except Exception as e:
                 print(e)
-                flash('Something went wrong', 'danger')
+                flash('Something went wrong!', 'danger')
+        if request.form.get('delete'):
+            return redirect(url_for('delete_bucket', bucket_name=request.form.get('bucket_name')))
     form = CreateBucketForm()
     response = get_client().list_buckets()
-    bucket_names = []
+    bucket_forms = []
     if buckets := response.get('Buckets'):
         for bucket in buckets:
-            bucket_names.append(bucket.get('Name'))
-    return render_template('index.html', username=USERNAME, title='S3 Buckets', buckets=bucket_names, form=form)
+            bucket_forms.append((bucket.get('Name'), DeleteBucketForm(bucket_name=bucket.get('Name'))))
+    return render_template('index.html', username=USERNAME, title='S3 Buckets', buckets=bucket_forms, form=form)
+
+@app.route('/delete_bucket/<string:bucket_name>')
+def delete_bucket(bucket_name: str):
+    try:
+        get_client().delete_bucket(Bucket=bucket_name)
+        flash(f'Bucket {bucket_name} has been deleted successfully!', 'success')
+    except Exception as e:
+        print(e)
+        flash('Something went wrong!', 'danger')
+    return redirect(url_for('index'))

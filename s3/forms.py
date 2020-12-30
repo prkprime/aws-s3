@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, HiddenField
 from wtforms.validators import DataRequired
 
 class CreateBucketForm(FlaskForm):
@@ -11,3 +11,8 @@ class CreateBucketForm(FlaskForm):
     )
 
     create = SubmitField('Create')
+
+class DeleteBucketForm(FlaskForm):
+    bucket_name = HiddenField()
+
+    delete = SubmitField('Delete')
