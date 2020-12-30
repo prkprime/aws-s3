@@ -2,29 +2,33 @@ from flask import Flask, render_template, url_for, flash, redirect, request
 from decouple import config
 from boto3.session import Session
 from tabulate import tabulate
-from .forms import CreateBucketForm, DeleteBucketForm
+from .forms import CreateBucketForm, DeleteBucketForm, FileForm
 import botocore
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = config('SECRET_KEY')
+REGION = config('REGION')
 
 def get_client():
     return Session().client(
         's3',
+        REGION,
         aws_access_key_id=config('S3_ACCESS_KEY'),
         aws_secret_access_key=config('S3_SECRET_ACCESS_KEY'),
+        config=botocore.client.Config(signature_version='s3v4'),
     )
 
 def get_resource_client():
     return Session().resource(
         's3',
+        REGION,
         aws_access_key_id=config('S3_ACCESS_KEY'),
         aws_secret_access_key=config('S3_SECRET_ACCESS_KEY'),
+        config=botocore.client.Config(signature_version='s3v4'),
     )
 
 response = get_client().list_buckets()
 USERNAME = response.get('Owner').get('DisplayName')
-REGION = config('REGION')
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -55,9 +59,56 @@ def index():
 @app.route('/delete_bucket/<string:bucket_name>')
 def delete_bucket(bucket_name: str):
     try:
-        get_client().delete_bucket(Bucket=bucket_name)
+        bucket = get_resource_client().Bucket(bucket_name)
+        bucket.objects.all().delete()
+        bucket.delete()
         flash(f'Bucket {bucket_name} has been deleted successfully!', 'success')
     except Exception as e:
         print(e)
         flash('Something went wrong!', 'danger')
     return redirect(url_for('index'))
+
+@app.route('/<string:bucket_name>', methods=['GET', 'POST'])
+def display_bucket(bucket_name):
+    if request.method == 'POST':
+        if request.form.get('delete'):
+            try:
+                get_client().delete_object(
+                    Bucket=request.form.get('bucket_name'),
+                    Key=request.form.get('file_name'),
+                )
+                flash('{} has been deleted from {} successfully!'.format(request.form.get('file_name'), request.form.get('bucket_name')), 'success')
+            except Exception as e:
+                print(e)
+                flash('Something went wrong!', 'danger')
+    file_list = []
+    try:
+        client = get_client()
+        responce = client.list_objects_v2(Bucket=bucket_name)
+        if files := responce.get('Contents'):
+            for file in files:
+                form = FileForm(bucket_name=bucket_name, file_name=file.get('Key'))
+                download_url = create_presigned_url(bucket_name, file.get('Key'))
+                if download_url:
+                    file_list.append((file.get('Key'), form, download_url))
+    except Exception as e:
+        flash('Something went wrong!', 'danger')
+        print(e)
+    return render_template('display_buckets.html', username=USERNAME, title=bucket_name, files=file_list)
+
+def create_presigned_url(bucket_name, object_name, expiration=36000):
+
+    client = get_client()
+    try:
+        response = client.generate_presigned_url(
+            'get_object',
+            Params={
+                'Bucket': bucket_name,
+                'Key': object_name
+                },
+            ExpiresIn=expiration
+            )
+    except Exception as e:
+        print(e)
+        return None
+    return response

@@ -16,3 +16,10 @@ class DeleteBucketForm(FlaskForm):
     bucket_name = HiddenField()
 
     delete = SubmitField('Delete')
+
+class FileForm(FlaskForm):
+    bucket_name = HiddenField()
+
+    file_name = HiddenField()
+
+    delete = SubmitField('Delete')

@@ -22,11 +22,11 @@
             <legend class="border-bottom mb-4">Your Buckets</legend>
             {% for bucket, bucket_form in buckets %}
             <h5 class="card-header d-flex justify-content-between align-items-center mt-1">
-                {{ bucket }}
+                <a href="{{ url_for('display_bucket', bucket_name=bucket) }}">{{ bucket}}</a>
                 <form method="POST" action="">
                     {{ bucket_form.bucket_name() }}
                     <div class="form-group">
-                        {{ bucket_form.delete(class="btn btn-secondary")}}
+                        {{ bucket_form.delete(class="btn btn-secondary mt-2")}}
                     </div>
                 </form>    
             </h5>
