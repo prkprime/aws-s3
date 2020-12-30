@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileField
 from wtforms import StringField, SubmitField, HiddenField
 from wtforms.validators import DataRequired
 
@@ -23,3 +24,13 @@ class FileForm(FlaskForm):
     file_name = HiddenField()
 
     delete = SubmitField('Delete')
+
+class FileUploadForm(FlaskForm):
+    file = FileField(
+        'Select File',
+        validators=[
+            DataRequired()
+        ]
+        )
+
+    upload = SubmitField('Upload')

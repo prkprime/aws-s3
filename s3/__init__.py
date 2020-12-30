@@ -2,7 +2,7 @@ from flask import Flask, render_template, url_for, flash, redirect, request
 from decouple import config
 from boto3.session import Session
 from tabulate import tabulate
-from .forms import CreateBucketForm, DeleteBucketForm, FileForm
+from .forms import CreateBucketForm, DeleteBucketForm, FileForm, FileUploadForm
 import botocore
 
 app = Flask(__name__)
@@ -35,7 +35,7 @@ def index():
     if request.method == 'POST':
         if request.form.get('create'):
             try:
-                new_bucket_name = request.form.get('new_bucket_name')
+                new_bucket_name = request.form.get('new_bucket_name').lower()
                 client = get_resource_client()
                 client.create_bucket(Bucket=new_bucket_name, CreateBucketConfiguration={'LocationConstraint': REGION})
                 flash(f'Bucket {new_bucket_name} created successfully!', 'success')
@@ -50,6 +50,7 @@ def index():
             return redirect(url_for('delete_bucket', bucket_name=request.form.get('bucket_name')))
     form = CreateBucketForm()
     response = get_client().list_buckets()
+    print(response)
     bucket_forms = []
     if buckets := response.get('Buckets'):
         for bucket in buckets:
@@ -81,7 +82,16 @@ def display_bucket(bucket_name):
             except Exception as e:
                 print(e)
                 flash('Something went wrong!', 'danger')
+        if request.form.get('upload'):
+            file = request.files.get('file')
+            try:
+                get_client().upload_fileobj(file, bucket_name, file.filename)
+                flash(f'File {file.filename} uploaded to bucket {bucket_name} successfully', 'success')
+            except Exception as e:
+                print(e)
+                flash(f'Something went wrong!', 'danger')
     file_list = []
+    upload_form = FileUploadForm()
     try:
         client = get_client()
         responce = client.list_objects_v2(Bucket=bucket_name)
@@ -94,7 +104,7 @@ def display_bucket(bucket_name):
     except Exception as e:
         flash('Something went wrong!', 'danger')
         print(e)
-    return render_template('display_buckets.html', username=USERNAME, title=bucket_name, files=file_list)
+    return render_template('display_buckets.html', username=USERNAME, title=bucket_name, files=file_list, upload_form=upload_form)
 
 def create_presigned_url(bucket_name, object_name, expiration=36000):
 

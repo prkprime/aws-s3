@@ -37,7 +37,27 @@
             <legend class="border-bottom mb-4">No files in Bucket : {{ title }}</legend>
         {% endif %}
     </div>
-    <div class="col-md-4 mt-4">
+    <div class="col-md-4 mt-4 border">
+        <form action="" method="post" enctype = "multipart/form-data">
+            <fieldset class="form-group">
+                <div class="form-group">
+                    <legend class="border-bottom mt-4 mb-4">Upload File</legend>
+                    {% if upload_form.file.errors%}
+                        {{ upload_form.file(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in upload_form.file.errors %}
+                                <small>{{ error }}</small>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ upload_form.file(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+            </fieldset>
+            <div class="form-group">
+                {{ upload_form.upload(class="btn btn-primary")}}
+            </div>
+        </form>
     </div>
 </div>
 {% endblock content %}
