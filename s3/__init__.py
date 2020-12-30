@@ -50,7 +50,6 @@ def index():
             return redirect(url_for('delete_bucket', bucket_name=request.form.get('bucket_name')))
     form = CreateBucketForm()
     response = get_client().list_buckets()
-    print(response)
     bucket_forms = []
     if buckets := response.get('Buckets'):
         for bucket in buckets:
