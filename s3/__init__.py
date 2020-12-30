@@ -27,9 +27,6 @@ def get_resource_client():
         config=botocore.client.Config(signature_version='s3v4'),
     )
 
-response = get_client().list_buckets()
-USERNAME = response.get('Owner').get('DisplayName')
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -54,7 +51,7 @@ def index():
     if buckets := response.get('Buckets'):
         for bucket in buckets:
             bucket_forms.append((bucket.get('Name'), DeleteBucketForm(bucket_name=bucket.get('Name'))))
-    return render_template('index.html', username=USERNAME, title='S3 Buckets', buckets=bucket_forms, form=form)
+    return render_template('index.html', title='S3 Buckets', buckets=bucket_forms, form=form)
 
 @app.route('/delete_bucket/<string:bucket_name>')
 def delete_bucket(bucket_name: str):
@@ -103,7 +100,7 @@ def display_bucket(bucket_name):
     except Exception as e:
         flash('Something went wrong!', 'danger')
         print(e)
-    return render_template('display_buckets.html', username=USERNAME, title=bucket_name, files=file_list, upload_form=upload_form)
+    return render_template('display_buckets.html', title=bucket_name, files=file_list, upload_form=upload_form)
 
 def create_presigned_url(bucket_name, object_name, expiration=36000):
 
