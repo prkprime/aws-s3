@@ -15,7 +15,7 @@ def get_client():
         REGION,
         aws_access_key_id=config('S3_ACCESS_KEY'),
         aws_secret_access_key=config('S3_SECRET_ACCESS_KEY'),
-        config=botocore.client.Config(signature_version='s3v4'),
+        config=botocore.client.Config(signature_version='s3v4', s3={'addressing_style': 'path'}),
     )
 
 def get_resource_client():
@@ -24,7 +24,7 @@ def get_resource_client():
         REGION,
         aws_access_key_id=config('S3_ACCESS_KEY'),
         aws_secret_access_key=config('S3_SECRET_ACCESS_KEY'),
-        config=botocore.client.Config(signature_version='s3v4'),
+        config=botocore.client.Config(signature_version='s3v4', s3={'addressing_style': 'path'}),
     )
 
 @app.route('/', methods=['GET', 'POST'])
